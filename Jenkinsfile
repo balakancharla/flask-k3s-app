@@ -53,7 +53,16 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
+                    // Wait for Docker to be ready
                     sh '''
+                    echo "Waiting for Docker daemon to be ready..."
+                    for i in {1..15}; do
+                        docker info > /dev/null 2>&1 && break
+                        echo "Waiting... ($i)"
+                        sleep 2
+                    done
+                    echo "Docker is ready!"
+
                     docker version
                     docker build -t $IMAGE_NAME:latest .
                     '''
