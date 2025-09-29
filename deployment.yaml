@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-k3s-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-k3s-app
+  template:
+    metadata:
+      labels:
+        app: flask-k3s-app
+    spec:
+      containers:
+      - name: flask-k3s-app
+        image: balakancharla79/flask-k3s-app:latest
+        ports:
+        - containerPort: 5000
+
