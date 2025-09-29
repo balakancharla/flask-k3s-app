@@ -13,19 +13,24 @@ spec:
       image: docker:24.0.2-dind
       securityContext:
         privileged: true
+      tty: true
+      command:
+        - dockerd-entrypoint.sh
+      args:
+        - --host=tcp://0.0.0.0:2375
+        - --host=unix:///var/run/docker.sock
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
-    - name: builder
-      image: docker:24.0.2-cli
-      command:
-        - cat
-      tty: true
-      env:
-        - name: DOCKER_HOST
-          value: tcp://localhost:2375
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
   volumes:
     - name: docker-graph-storage
+      emptyDir: {}
+    - name: workspace-volume
       emptyDir: {}
 """
         }
@@ -39,13 +44,15 @@ spec:
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                container('docker') {
+                    checkout scm
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                container('builder') {
+                container('docker') {
                     sh '''
                     docker version
                     docker build -t $IMAGE_NAME:latest .
@@ -56,7 +63,7 @@ spec:
 
         stage('Authenticate and Push') {
             steps {
-                container('builder') {
+                container('docker') {
                     withCredentials([usernamePassword(
                         credentialsId: "${DOCKER_CREDENTIALS_ID}",
                         usernameVariable: 'U',
@@ -70,9 +77,10 @@ spec:
                 }
             }
         }
+
         stage('Deploy to K3s') {
             steps {
-                container('builder') {
+                container('docker') {
                     sh '''
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
