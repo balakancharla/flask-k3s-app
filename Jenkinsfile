@@ -52,23 +52,30 @@ spec:
         }
 
         stage('Build Docker Image') {
-            steps {
-                container('docker') {
-                    sh '''
-                    echo "Waiting for Docker daemon to be ready..."
-                    for i in {1..15}; do
-                        docker info > /dev/null 2>&1 && break
-                        echo "Waiting... ($i)"
-                        sleep 2
-                    done
-                    echo "Docker is ready!"
+    steps {
+        container('docker') {
+            sh '''
+            echo "Waiting for Docker daemon to be ready..."
+            for i in {1..15}; do
+              if docker info > /dev/null 2>&1; then
+                echo "Docker is ready!"
+                break
+              fi
+              echo "Waiting for Docker... ($i)"
+              sleep 2
+              if [ "$i" -eq 15 ]; then
+                echo "Docker daemon not ready after waiting, exiting..."
+                exit 1
+              fi
+            done
 
-                    docker version
-                    docker build -t $IMAGE_NAME:latest .
-                    '''
-                }
-            }
+            docker version
+            docker build -t $IMAGE_NAME:latest .
+            '''
         }
+    }
+}
+
 
         stage('Authenticate and Push') {
             steps {
