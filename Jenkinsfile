@@ -11,17 +11,19 @@ spec:
   containers:
     - name: docker
       image: docker:24.0.2-dind
-      securityContext:
-        privileged: true
-      tty: true
       command:
         - dockerd-entrypoint.sh
       args:
         - --host=tcp://0.0.0.0:2375
         - --host=unix:///var/run/docker.sock
+      securityContext:
+        privileged: true
+      tty: true
       env:
         - name: DOCKER_TLS_CERTDIR
           value: ""
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
@@ -42,18 +44,16 @@ spec:
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                container('docker') {
-                    checkout scm
-                }
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    // Wait for Docker to be ready
                     sh '''
                     echo "Waiting for Docker daemon to be ready..."
                     for i in {1..15}; do
