@@ -27,6 +27,14 @@ spec:
           mountPath: /var/lib/docker
         - name: workspace-volume
           mountPath: /home/jenkins/agent
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
   volumes:
     - name: docker-graph-storage
       emptyDir: {}
@@ -42,7 +50,6 @@ spec:
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -95,7 +102,7 @@ spec:
 
         stage('Deploy to K3s') {
             steps {
-                container('docker') {
+                container('kubectl') {
                     sh '''
                     kubectl apply -f deployment.yaml
                     kubectl apply -f service.yaml
