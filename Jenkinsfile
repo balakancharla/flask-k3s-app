@@ -28,7 +28,7 @@ spec:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.27.3
+      image: lachlanevenson/k8s-kubectl:latest
       command:
         - cat
       tty: true
